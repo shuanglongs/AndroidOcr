@@ -22,6 +22,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
@@ -160,6 +161,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
         return inflater.inflate(R.layout.fragment_camera2_basic, container, false);
     }
 
@@ -814,7 +816,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     /**
      * 将JPEG 保存到指定的文件中。
      */
-    private static class ImageSaver implements Runnable {
+    private  class ImageSaver implements Runnable {
 
         //JPEG图像
         private final Image mImage;
@@ -835,6 +837,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             try {
                 output = new FileOutputStream(mFile);
                 output.write(bytes);
+
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -846,6 +849,15 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                         e.printStackTrace();
                     }
                 }
+
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        startActivity(new Intent(getActivity(),ShowImageActivity.class));
+                    }
+                });
+
+
             }
         }
 
