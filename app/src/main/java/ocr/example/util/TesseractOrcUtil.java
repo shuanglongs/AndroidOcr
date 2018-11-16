@@ -5,6 +5,7 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.blankj.utilcode.util.ResourceUtils;
 import com.googlecode.tesseract.android.TessBaseAPI;
 
 import java.io.File;
@@ -15,7 +16,7 @@ public class TesseractOrcUtil {
     public static final String TAG = "Tess_Orc";
     private static final String TESSBASE_PATH = Environment.getExternalStorageDirectory().toString();
     private static final String DEFAULT_LANGUAGE = "eng";
-    private static final String TESSDATA_PATH = TESSBASE_PATH + "/tessdata/";
+    public static final String TESSDATA_PATH = TESSBASE_PATH + "/tessdata/";
     private static final String[] EXPECTED_CUBE_DATA_FILES_ENG = {
             "eng.cube.bigrams",
             "eng.cube.fold",
@@ -61,7 +62,8 @@ public class TesseractOrcUtil {
                 File expectedFile = new File(TESSDATA_PATH + File.separator + languageCode + ".traineddata");
                 if (!expectedFile.exists()) {
                     Log.d(TAG, "Make sure that you've copied " + languageCode + ".traineddata to " + TESSDATA_PATH);
-                    return false;
+                    ResourceUtils.copyFileFromAssets("tessdata", TesseractOrcUtil.TESSDATA_PATH);
+                    return true;
                 }
             }
         }
