@@ -16,13 +16,22 @@
         app:layout_constraintTop_toTopOf="parent"/>
 
 
-    <TextView
-        android:id="@+id/tv_show_text"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="@+id/iv_show_image"
         app:layout_constraintLeft_toLeftOf="@+id/iv_show_image"
         app:layout_constraintRight_toRightOf="@+id/iv_show_image"
-        app:layout_constraintTop_toTopOf="@+id/iv_show_image"/>
+        app:layout_constraintTop_toTopOf="@+id/iv_show_image">
+
+        <TextView
+            android:id="@+id/tv_show_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/holo_red_dark"
+            />
+
+    </ScrollView>
+
 
 </android.support.constraint.ConstraintLayout>

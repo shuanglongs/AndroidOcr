@@ -17,6 +17,7 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
@@ -41,6 +42,14 @@ public class ShowImageActivity extends AppCompatActivity {
         mShowText = findViewById(R.id.tv_show_text);
         //显示图片
         mHandler = new ShowImageHandler();
+
+        /**
+         * OCR的识别率取决于两个方面，图片质量和OCR engine的能力。
+         * 通常为了提高识别率，需要对图片作预处理。比如常见的二值化(黑白)，放大，切割，锐化等。
+         * 可以直接调用leptonica接口实现。至于Tesseract Engine，只能说是非常好的英文OCR engine，
+         * 处理中文还是有待提高。选择好一个OCR engine之后，能做的估计也就是在图片的预处理上下功夫了。
+         * */
+
     }
 
     @Override
@@ -68,6 +77,16 @@ public class ShowImageActivity extends AppCompatActivity {
                         Mat grayMat = new Mat();
                         Imgproc.cvtColor(rawMat, grayMat, Imgproc.COLOR_BGR2GRAY);
 
+                        //高斯滤波
+                        Mat blurMat = new Mat();
+                        Imgproc.GaussianBlur(grayMat,blurMat,new Size(3, 3),1);
+
+                        //等比例方法图像
+//                        resize(img, dst, Size(),0.5,0.5);
+//                        Mat resizeMat = new Mat();
+
+//                        Imgproc.resize(blurMat,resizeMat,new Size(),1.5,1.5,);
+
 //                        Mat threshold = new Mat();
 //                        Imgproc.adaptiveThreshold(grayMat, threshold, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 3, 0);
                         // 二值阈值化
@@ -82,7 +101,7 @@ public class ShowImageActivity extends AppCompatActivity {
 //                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TOZERO_INV);
 
                         Bitmap grayBitmap = Bitmap.createBitmap(rawBmp.getWidth(), rawBmp.getHeight(), Bitmap.Config.ARGB_4444);
-                        Utils.matToBitmap(grayMat, grayBitmap);
+                        Utils.matToBitmap(blurMat, grayBitmap);
 
                         Message obtain = Message.obtain();
                         obtain.what = MESSAGE_SHOW_IMAGE;

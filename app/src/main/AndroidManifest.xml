@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <!-- android:screenOrientation="landscape" | android:screenOrientation="portrait"-->
-        <activity android:name=".MainActivity" android:screenOrientation="portrait">
+        <activity android:name=".MainActivity" android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -25,7 +25,7 @@
         </activity>
 
         <!-- android:screenOrientation="landscape" | android:screenOrientation="portrait"-->
-        <activity android:name=".ShowImageActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".ShowImageActivity" android:screenOrientation="landscape"/>
     </application>
 
 </manifest>
