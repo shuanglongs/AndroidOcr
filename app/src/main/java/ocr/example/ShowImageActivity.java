@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,9 +23,8 @@ import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 
-import ocr.example.util.TesseractOrcUtil;
-
 public class ShowImageActivity extends AppCompatActivity {
+    public static final String TAG = "Show_Image_Activity";
     private final static int MESSAGE_SHOW_IMAGE = 100;
     private final static int MESSAGE_SHOW_TEXT = 110;
     private ShowImageHandler mHandler;
@@ -40,7 +40,7 @@ public class ShowImageActivity extends AppCompatActivity {
 
         mShowImage = findViewById(R.id.iv_show_image);
         mShowText = findViewById(R.id.tv_show_text);
-        //显示图片
+
         mHandler = new ShowImageHandler();
 
         /**
@@ -59,62 +59,28 @@ public class ShowImageActivity extends AppCompatActivity {
         mDisposeBmpDialog = ProgressDialog.show(this, "提示", "正在处理图片...");
         mDisposeBmpDialog.show();
 
-        //初始化 open cv 3_4_0
-        OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_4_0, this, new BaseLoaderCallback(this) {
-            @Override
-            public void onManagerConnected(int status) {
-                switch (status) {
-                    case LoaderCallbackInterface.SUCCESS:
-                        //获取图片
-                        File file = new File(getExternalFilesDir(null), "pic.jpg");
-                        Bitmap rawBmp = ImageUtils.getBitmap(file);
-
-                        //把原图变成 open cv 识别的Mat
-                        Mat rawMat = new Mat();
-                        Utils.bitmapToMat(rawBmp, rawMat);
-
-                        //把原图变成灰图
-                        Mat grayMat = new Mat();
-                        Imgproc.cvtColor(rawMat, grayMat, Imgproc.COLOR_BGR2GRAY);
-
-                        //高斯滤波
-                        Mat blurMat = new Mat();
-                        Imgproc.GaussianBlur(grayMat,blurMat,new Size(3, 3),1);
-
-                        //等比例方法图像
-//                        resize(img, dst, Size(),0.5,0.5);
-//                        Mat resizeMat = new Mat();
-
-//                        Imgproc.resize(blurMat,resizeMat,new Size(),1.5,1.5,);
-
-//                        Mat threshold = new Mat();
-//                        Imgproc.adaptiveThreshold(grayMat, threshold, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 3, 0);
-                        // 二值阈值化
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_BINARY);
-                        // 阈值化到零
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TOZERO);
-                        // 截断阈值化
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TRUNC);
-                        // 反转二值阈值化
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_BINARY_INV);
-                        // 反转阈值化到零
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TOZERO_INV);
-
-                        Bitmap grayBitmap = Bitmap.createBitmap(rawBmp.getWidth(), rawBmp.getHeight(), Bitmap.Config.ARGB_4444);
-                        Utils.matToBitmap(blurMat, grayBitmap);
-
-                        Message obtain = Message.obtain();
-                        obtain.what = MESSAGE_SHOW_IMAGE;
-                        obtain.obj = grayBitmap;
-                        mHandler.sendMessage(obtain);
-                        break;
-                    default:
-                        super.onManagerConnected(status);
-                        break;
-                }
-            }
-        });
+        //初始化 open cv
+        if (!OpenCVLoader.initDebug()) {
+            Log.d(TAG, "OpenCV library not found!");
+        } else {
+            Log.d(TAG, "OpenCV library found inside package. Using it!");
+            mBaseLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+        }
     }
+
+    private BaseLoaderCallback mBaseLoaderCallback = new BaseLoaderCallback(this) {
+        @Override
+        public void onManagerConnected(int status) {
+            switch (status) {
+                case LoaderCallbackInterface.SUCCESS:
+                    new ImgProcessThread().start();
+                    break;
+                default:
+                    super.onManagerConnected(status);
+                    break;
+            }
+        }
+    };
 
     private class ShowImageHandler extends Handler {
         @Override
@@ -140,6 +106,55 @@ public class ShowImageActivity extends AppCompatActivity {
                     break;
             }
 
+        }
+    }
+
+    private class ImgProcessThread extends Thread{
+        @Override
+        public void run() {
+            super.run();
+            //获取图片
+            File file = new File(getExternalFilesDir(null), "pic.jpg");
+            Bitmap rawBmp = ImageUtils.getBitmap(file);
+
+            //把原图变成 open cv 识别的Mat
+            Mat rawMat = new Mat();
+            Utils.bitmapToMat(rawBmp, rawMat);
+
+            //把原图变成灰图
+            Mat grayMat = new Mat();
+            Imgproc.cvtColor(rawMat, grayMat, Imgproc.COLOR_BGR2GRAY);
+
+            //高斯滤波
+            Mat blurMat = new Mat();
+            Imgproc.GaussianBlur(grayMat,blurMat,new Size(3, 3),1);
+
+            //等比例方法图像
+//                        resize(img, dst, Size(),0.5,0.5);
+//                        Mat resizeMat = new Mat();
+
+//                        Imgproc.resize(blurMat,resizeMat,new Size(),1.5,1.5,);
+
+//                        Mat threshold = new Mat();
+//                        Imgproc.adaptiveThreshold(grayMat, threshold, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 3, 0);
+            // 二值阈值化
+//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_BINARY);
+            // 阈值化到零
+//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TOZERO);
+            // 截断阈值化
+//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TRUNC);
+            // 反转二值阈值化
+//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_BINARY_INV);
+            // 反转阈值化到零
+//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TOZERO_INV);
+
+            Bitmap grayBitmap = Bitmap.createBitmap(rawBmp.getWidth(), rawBmp.getHeight(), Bitmap.Config.ARGB_4444);
+            Utils.matToBitmap(blurMat, grayBitmap);
+
+            Message obtain = Message.obtain();
+            obtain.what = MESSAGE_SHOW_IMAGE;
+            obtain.obj = grayBitmap;
+            mHandler.sendMessage(obtain);
         }
     }
 

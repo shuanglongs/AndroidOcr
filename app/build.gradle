@@ -29,5 +29,6 @@ dependencies {
     implementation 'com.blankj:utilcode:1.21.2'
     //ocr tess-two 9.0.0
     implementation 'com.rmtheis:tess-two:9.0.0'
-    implementation project(':openCVLibrary')
+    //openCVLibrary343
+    implementation project(':openCVLibrary343')
 }
