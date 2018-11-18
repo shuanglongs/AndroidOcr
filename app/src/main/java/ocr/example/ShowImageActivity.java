@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.blankj.utilcode.util.ImageUtils;
+import com.blankj.utilcode.util.LogUtils;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
@@ -89,8 +90,17 @@ public class ShowImageActivity extends AppCompatActivity {
             switch (msg.what) {
                 case MESSAGE_SHOW_IMAGE:
                     mDisposeBmpDialog.dismiss();
+
                     Bitmap bitmap = (Bitmap) msg.obj;
-                    mShowImage.setImageBitmap(bitmap);
+                    LogUtils.d(TAG, "bitmap is w - h --> " + bitmap.getWidth()
+                            + " , " + bitmap.getHeight());
+
+                    Bitmap scale = ImageUtils.scale(bitmap, (int)(bitmap.getWidth() / 1.1),
+                            (int)(bitmap.getHeight() / 1.1));
+                    LogUtils.d(TAG, "bitmap is w - h --> " + scale.getWidth()
+                            + " , " + scale.getHeight());
+
+                    mShowImage.setImageBitmap(scale);
                     mShowImage.invalidate();
 
                     mIdentifyTextDialog = ProgressDialog.show(ShowImageActivity.this, "提示", "正在识别文字...");
@@ -109,7 +119,7 @@ public class ShowImageActivity extends AppCompatActivity {
         }
     }
 
-    private class ImgProcessThread extends Thread{
+    private class ImgProcessThread extends Thread {
         @Override
         public void run() {
             super.run();
@@ -127,29 +137,14 @@ public class ShowImageActivity extends AppCompatActivity {
 
             //高斯滤波
             Mat blurMat = new Mat();
-            Imgproc.GaussianBlur(grayMat,blurMat,new Size(3, 3),1);
+            Imgproc.GaussianBlur(grayMat, blurMat, new Size(3, 3), 1);
 
-            //等比例方法图像
-//                        resize(img, dst, Size(),0.5,0.5);
-//                        Mat resizeMat = new Mat();
-
-//                        Imgproc.resize(blurMat,resizeMat,new Size(),1.5,1.5,);
-
-//                        Mat threshold = new Mat();
-//                        Imgproc.adaptiveThreshold(grayMat, threshold, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 3, 0);
             // 二值阈值化
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_BINARY);
-            // 阈值化到零
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TOZERO);
-            // 截断阈值化
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TRUNC);
-            // 反转二值阈值化
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_BINARY_INV);
-            // 反转阈值化到零
-//                         Imgproc.threshold(grayMat,threshold,100,255,Imgproc.THRESH_TOZERO_INV);
+            Mat thresholdMat = new Mat();
+            Imgproc.threshold(blurMat, thresholdMat, 93, 255, Imgproc.THRESH_BINARY);
 
             Bitmap grayBitmap = Bitmap.createBitmap(rawBmp.getWidth(), rawBmp.getHeight(), Bitmap.Config.ARGB_4444);
-            Utils.matToBitmap(blurMat, grayBitmap);
+            Utils.matToBitmap(thresholdMat, grayBitmap);
 
             Message obtain = Message.obtain();
             obtain.what = MESSAGE_SHOW_IMAGE;

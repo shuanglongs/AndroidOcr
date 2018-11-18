@@ -21,6 +21,9 @@ public class MainActivity extends AppCompatActivity {
                         getSupportFragmentManager().beginTransaction()
                                 .replace(R.id.container, Camera2BasicFragment.newInstance())
                                 .commit();
+//                        getSupportFragmentManager().beginTransaction()
+//                                .replace(R.id.container, Camera2BasicFragmentTest.newInstance())
+//                                .commit();
                     }
 
                     @Override

@@ -72,7 +72,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-public class Camera2BasicFragment extends Fragment implements View.OnClickListener,
+public class Camera2BasicFragmentTest extends Fragment implements View.OnClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final String TAG = "Camera2BasicFragment";
@@ -155,8 +155,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     //图片的输出文件
     private File mFile;
 
-    public static Camera2BasicFragment newInstance() {
-        return new Camera2BasicFragment();
+    public static Camera2BasicFragmentTest newInstance() {
+        return new Camera2BasicFragmentTest();
     }
 
     @Override
@@ -391,7 +391,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
     };
 
     /**
-     * 打开{@link Camera2BasicFragment＃mCameraId}指定的摄像头。
+     * 打开{@link Camera2BasicFragmentTest ＃mCameraId}指定的摄像头。
      */
     private void openCamera(int width, int height) {
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -493,9 +493,11 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
                 //危险，W.R。！ 尝试使用过大的预览大小可能会超出相机总线的带宽限制，从而产生华丽的预览
                 //存储垃圾捕获数据。
-                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
-                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                        maxPreviewHeight, largest);
+//                mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
+//                        rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
+//                        maxPreviewHeight, largest);
+
+                mPreviewSize = new Size(maxPreviewWidth,maxPreviewHeight);
 
                 //我们将TextureView的长宽比与我们选择的预览的大小相匹配。
                 int orientation = getResources().getConfiguration().orientation;
@@ -507,7 +509,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
                 //检查是否支持flash。（闪光灯）
                 Boolean available = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-//                mFlashSupported = available == null ? false : available;
+                mFlashSupported = available == null ? false : available;
 
                 mCameraId = cameraId;
                 return;
@@ -586,8 +588,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
-            float scale = Math.max((float) viewHeight / mPreviewSize.getHeight(),
-                    (float) viewWidth / mPreviewSize.getWidth());
+            float scale = Math.max((float) viewHeight / mPreviewSize.getHeight(), (float) viewWidth / mPreviewSize.getWidth());
             matrix.postScale(scale, scale, centerX, centerY);
             matrix.postRotate(90 * (rotation - 2), centerX, centerY);
         } else if (Surface.ROTATION_180 == rotation) {
