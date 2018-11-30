@@ -34,6 +34,9 @@ public class ShowImageActivity extends AppCompatActivity {
     private ProgressDialog mDisposeBmpDialog;
     private ProgressDialog mIdentifyTextDialog;
 
+    private StringBuilder sb = new StringBuilder();
+
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,14 +46,6 @@ public class ShowImageActivity extends AppCompatActivity {
         mShowText = findViewById(R.id.tv_show_text);
 
         mHandler = new ShowImageHandler();
-
-        /**
-         * OCR的识别率取决于两个方面，图片质量和OCR engine的能力。
-         * 通常为了提高识别率，需要对图片作预处理。比如常见的二值化(黑白)，放大，切割，锐化等。
-         * 可以直接调用leptonica接口实现。至于Tesseract Engine，只能说是非常好的英文OCR engine，
-         * 处理中文还是有待提高。选择好一个OCR engine之后，能做的估计也就是在图片的预处理上下功夫了。
-         * */
-
     }
 
     @Override
@@ -91,16 +86,19 @@ public class ShowImageActivity extends AppCompatActivity {
                 case MESSAGE_SHOW_IMAGE:
                     mDisposeBmpDialog.dismiss();
 
+                    /*小米手机需要缩小bitmap，不然不显示*/
+//                    Bitmap bitmap = (Bitmap) msg.obj;
+//                    LogUtils.d(TAG, "bitmap is w - h --> " + bitmap.getWidth()
+//                            + " , " + bitmap.getHeight());
+//                    Bitmap scale = ImageUtils.scale(bitmap, (int)(bitmap.getWidth() / 1.1),
+//                            (int)(bitmap.getHeight() / 1.1));
+//                    LogUtils.d(TAG, "bitmap is w - h --> " + scale.getWidth()
+//                            + " , " + scale.getHeight());
+
+
                     Bitmap bitmap = (Bitmap) msg.obj;
-                    LogUtils.d(TAG, "bitmap is w - h --> " + bitmap.getWidth()
-                            + " , " + bitmap.getHeight());
 
-                    Bitmap scale = ImageUtils.scale(bitmap, (int)(bitmap.getWidth() / 1.1),
-                            (int)(bitmap.getHeight() / 1.1));
-                    LogUtils.d(TAG, "bitmap is w - h --> " + scale.getWidth()
-                            + " , " + scale.getHeight());
-
-                    mShowImage.setImageBitmap(scale);
+                    mShowImage.setImageBitmap(bitmap);
                     mShowImage.invalidate();
 
                     mIdentifyTextDialog = ProgressDialog.show(ShowImageActivity.this, "提示", "正在识别文字...");
@@ -110,8 +108,8 @@ public class ShowImageActivity extends AppCompatActivity {
                     break;
                 case MESSAGE_SHOW_TEXT:
                     String text = (String) msg.obj;
-                    mShowText.setText(text);
-
+                    sb.append("\r\n").append(text).append("\r\n");
+                    mShowText.setText(sb.toString());
                     mIdentifyTextDialog.dismiss();
                     break;
             }
@@ -123,35 +121,90 @@ public class ShowImageActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
+
             //获取图片
             File file = new File(getExternalFilesDir(null), "pic.jpg");
             Bitmap rawBmp = ImageUtils.getBitmap(file);
 
-            //把原图变成 open cv 识别的Mat
-            Mat rawMat = new Mat();
-            Utils.bitmapToMat(rawBmp, rawMat);
+            LogUtils.d(TAG, "bitmap is w - h --> " + rawBmp.getWidth() + " , " + rawBmp.getHeight());
 
-            //把原图变成灰图
-            Mat grayMat = new Mat();
-            Imgproc.cvtColor(rawMat, grayMat, Imgproc.COLOR_BGR2GRAY);
 
-            //高斯滤波
-            Mat blurMat = new Mat();
-            Imgproc.GaussianBlur(grayMat, blurMat, new Size(3, 3), 1);
+            //横竖屏识别
+//            imgProc(rawBmp,0,0,rawBmp.getWidth(),rawBmp.getHeight(),110);
 
-            // 二值阈值化
-            Mat thresholdMat = new Mat();
-            Imgproc.threshold(blurMat, thresholdMat, 93, 255, Imgproc.THRESH_BINARY);
 
-            Bitmap grayBitmap = Bitmap.createBitmap(rawBmp.getWidth(), rawBmp.getHeight(), Bitmap.Config.ARGB_4444);
-            Utils.matToBitmap(thresholdMat, grayBitmap);
+            //横屏：裁剪图片，提高识别率
 
-            Message obtain = Message.obtain();
-            obtain.what = MESSAGE_SHOW_IMAGE;
-            obtain.obj = grayBitmap;
-            mHandler.sendMessage(obtain);
+            //1.
+            int clipX1 = 300;
+            int clipY1 = 70;
+            int clipWidth1 = rawBmp.getWidth() - clipX1 - 300;
+            int clipHeight1 = 200;
+            imgProc(rawBmp, clipX1, clipY1, clipWidth1, clipHeight1, 120);
+
+            //2.
+            int clipX2 = 1100;
+            int clipY2 = 550;
+            int clipWidth2 = rawBmp.getWidth() - clipX2 - 200;
+            int clipHeight2 = 190;
+            imgProc(rawBmp, clipX2, clipY2, clipWidth2, clipHeight2, 120);
+
+            //3.
+            int clipX3 = 1100;
+            int clipY3 = 760;
+            int clipWidth3 = rawBmp.getWidth() - clipX3 - 200;
+            int clipHeight3 = 160;
+            imgProc(rawBmp, clipX3, clipY3, clipWidth3, clipHeight3, 120);
+
+            //4.
+            int clipX4 = 1100;
+            int clipY4 = 890;
+            int clipWidth4 = rawBmp.getWidth() - clipX4 - 200;
+            int clipHeight4 = 450;
+            imgProc(rawBmp, clipX4, clipY4, clipWidth4, clipHeight4, 120);
+
+            //5.
+            int clipX5 = 1100;
+            int clipY5 = 1330;
+            int clipWidth5 = rawBmp.getWidth() - clipX5 - 550;
+            int clipHeight5 = 320;
+            imgProc(rawBmp, clipX5, clipY5, clipWidth5, clipHeight5, 110);
+
+
         }
     }
+
+
+    private void imgProc(Bitmap rawBitmap, int clipX, int clipY, int clipWidth, int clipHeight, double thresh) {
+
+        Bitmap clipBitmap = ImageUtils.clip(rawBitmap, clipX, clipY, clipWidth, clipHeight);
+
+        //把原图变成 open cv 识别的Mat
+        Mat rawMat = new Mat();
+        Utils.bitmapToMat(clipBitmap, rawMat);
+
+        //把原图变成灰图
+        Mat grayMat = new Mat();
+        Imgproc.cvtColor(rawMat, grayMat, Imgproc.COLOR_BGR2GRAY);
+
+        //高斯滤波
+        Mat blurMat = new Mat();
+        Imgproc.GaussianBlur(grayMat, blurMat, new Size(3, 3), 1);
+
+        // 二值阈值化
+        Mat thresholdMat = new Mat();
+        Imgproc.threshold(blurMat, thresholdMat, thresh, 255, Imgproc.THRESH_BINARY);
+
+        Bitmap finalBitmap = Bitmap.createBitmap(clipBitmap.getWidth(), clipBitmap.getHeight(), Bitmap.Config.ARGB_4444);
+        Utils.matToBitmap(thresholdMat, finalBitmap);
+
+        Message obtain = Message.obtain();
+        obtain.what = MESSAGE_SHOW_IMAGE;
+        obtain.obj = finalBitmap;
+        mHandler.sendMessage(obtain);
+
+    }
+
 
     private class OcrThread extends Thread {
         private Bitmap bitmap;
@@ -163,12 +216,14 @@ public class ShowImageActivity extends AppCompatActivity {
         @Override
         public void run() {
             super.run();
-            //识别文字
-            String text = TesseractOrcUtil.getText(bitmap);
-            Message obtain = Message.obtain();
-            obtain.what = MESSAGE_SHOW_TEXT;
-            obtain.obj = text;
-            mHandler.sendMessage(obtain);
+            synchronized (bitmap) {
+                //识别文字
+                String text = TesseractOrcUtil.getText(bitmap);
+                Message obtain = Message.obtain();
+                obtain.what = MESSAGE_SHOW_TEXT;
+                obtain.obj = text;
+                mHandler.sendMessage(obtain);
+            }
         }
     }
 }
